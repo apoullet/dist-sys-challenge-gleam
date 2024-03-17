@@ -1,0 +1,8 @@
+*.beam
+*.ez
+/build
+erl_crash.dump
+store/
+.github/
+*.md
+dist_sys_challenge
