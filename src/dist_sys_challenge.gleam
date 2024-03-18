@@ -1,13 +1,27 @@
 import gleam/io
 import gleam/erlang
-import gleam/option
 import message
 
 pub fn main() {
-  process_message(option.None)
+  let node_id = process_init_message()
+  process_message(node_id)
 }
 
-fn process_message(maybe_node_id: option.Option(String)) {
+fn process_init_message() -> String {
+  let input = case erlang.get_line("") {
+    Ok(inner) -> inner
+    Error(_) -> panic as "Encountered error when getting input"
+  }
+
+  let message = case message.deserialize(input) {
+    Ok(inner) -> inner
+    Error(_) -> panic as "Could not parse input into Message"
+  }
+
+  process_init(message)
+}
+
+fn process_message(node_id: String) {
   let input = case erlang.get_line("") {
     Ok(inner) -> inner
     Error(_) -> panic as "Encountered error when getting input"
@@ -19,19 +33,11 @@ fn process_message(maybe_node_id: option.Option(String)) {
   }
 
   case message.body {
-    message.Init(_, _, _) -> {
-      let node_id = process_init(message)
-      process_message(option.Some(node_id))
-    }
     message.Echo(_, _) -> {
-      let node_id = case maybe_node_id {
-        option.Some(inner) -> inner
-        option.None -> panic as "Did not have a node_id to send a message with"
-      }
       process_echo(message, node_id)
-      process_message(maybe_node_id)
+      process_message(node_id)
     }
-    _ -> process_message(maybe_node_id)
+    _ -> process_message(node_id)
   }
 }
 
